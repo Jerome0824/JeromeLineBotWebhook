@@ -5,8 +5,8 @@ import requests
 
 app = Flask(__name__)
 
-LINE_ACCESS_TOKEN = "你的 LINE TOKEN"
-BOT_USER_ID = "你的 BOT USER ID"
+LINE_ACCESS_TOKEN = "HSe3XVIu1uX1L5KKbtGP8YBEHWgLKfGpdFQhYgQtVuLmLwBUTVDMi7/J4YPB8ZejXP0Wxa4m+c/VWX48tzoFcx5k+Wd/iS4uIz71lkPEtG94S7xO92ED6h7a+ZmSEXreduRqiEsmAgnyUu1ukjOqiAdB04t89/1O/w1cDnyilFU="
+BOT_USER_ID = "U6b27dfd1fc788e578193c9571b05b41a"
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
