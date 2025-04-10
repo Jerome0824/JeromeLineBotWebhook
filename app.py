@@ -81,11 +81,15 @@ def get_stock_info(stock_code):
                 "User-Agent": "Mozilla/5.0"
             }
             res = requests.get(url, headers=headers)
+            print(f"📡 嘗試查詢：{url}", flush=True)
             data = res.json()
             msg_array = data.get("msgArray", [])
+            print(f"📬 回傳結果：{json.dumps(msg_array, ensure_ascii=False)}", flush=True)
             return msg_array[0] if msg_array else None
 
-        stock = fetch("tse") or fetch("otc")
+        stock = fetch("tse")
+        if not stock:
+            stock = fetch("otc")
 
         if not stock:
             return f"❌ 找不到代碼 {stock_code} 的即時股價資料"
