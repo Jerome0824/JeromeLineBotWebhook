@@ -25,25 +25,29 @@ def webhook():
             is_group = source_type == "group"
             mentioned = False
 
-            # ✅ 檢查是否被 @
-            if "mention" in message:
-                for m in message["mention"].get("mentionees", []):
+            # ✅ 安全檢查是否被 @
+            mention = message.get("mention")
+            if mention:
+                for m in mention.get("mentionees", []):
                     if m.get("userId") == BOT_USER_ID:
                         mentioned = True
 
+            # ✅ 群組中沒被 tag 就不回應
             if is_group and not mentioned:
                 print("👻 在群組中但沒被 tag，略過", flush=True)
                 continue
 
-            # ✅ 處理「台股查詢」格式
+            # ✅ 處理訊息
             reply_token = event["replyToken"]
+
             if text.startswith("台股") and len(text) >= 6:
                 stock_code = text[2:6]
                 reply_message = get_taiwan_stock_price(stock_code)
             else:
                 reply_message = f"你說的是：「{text}」"
 
-            # ✅ 發送回覆
+            print("📝 準備回應內容：", reply_message, flush=True)
+
             headers = {
                 "Authorization": f"Bearer {LINE_ACCESS_TOKEN}",
                 "Content-Type": "application/json"
@@ -64,7 +68,7 @@ def webhook():
 
     return "OK"
 
-# ✅ 查詢台股即時價格
+# ✅ 查詢台股即時價格（上市）
 def get_taiwan_stock_price(stock_code):
     try:
         url = f"https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch=tse_{stock_code}.tw"
@@ -73,15 +77,16 @@ def get_taiwan_stock_price(stock_code):
         }
         res = requests.get(url, headers=headers)
         data = res.json()
-        stock = data.get("msgArray", [None])[0]
+        msg_array = data.get("msgArray", [])
 
-        if stock:
-            name = stock.get("n", "未知股票")
-            price = stock.get("z", "-")
-            time = stock.get("t", "-")
-            return f"[{name}({stock_code})] 現價：{price} 元\n時間：{time}"
-        else:
-            return f"❌ 查無股票代碼 {stock_code} 的即時資料"
+        if not msg_array:
+            return f"❌ 找不到代碼 {stock_code} 的即時股價資料"
+
+        stock = msg_array[0]
+        name = stock.get("n", "未知股票")
+        price = stock.get("z", "-")
+        time = stock.get("t", "-")
+        return f"[{name}({stock_code})] 現價：{price} 元\n時間：{time}"
 
     except Exception as e:
         print("❗ 查詢發生錯誤：", e, flush=True)
