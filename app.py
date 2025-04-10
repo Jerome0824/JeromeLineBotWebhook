@@ -46,12 +46,7 @@ def webhook():
             is_otc = False
             if text.startswith("台股") and len(text) >= 6:
                 stock_code = text[2:6]
-            elif text.startswith("上櫃") and len(text) >= 6:
-                stock_code = text[2:6]
-                is_otc = True
-
-            if stock_code:
-                reply_message = get_stock_info(stock_code, is_otc)
+                reply_message = get_stock_info(stock_code)
             else:
                 reply_message = f"你說的是：「{text}」"
 
