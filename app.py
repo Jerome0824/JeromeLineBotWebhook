@@ -87,27 +87,30 @@ def get_stock_info(stock_code):
             if not msg_array:
                 return None
             stock = msg_array[0]
-            # 檢查是否為有效數值
-            if stock.get("z") in ["-", "", None]:
-                return None
-            return stock
+            return stock if stock.get("n") and stock.get("c") else None
 
-        # 優先查上市（但要確認資料有效）
         stock = fetch("tse")
-        if not stock:
+        if not stock or stock.get("z") in ["-", "", None]:
             stock = fetch("otc")
 
         if not stock:
             return f"❌ 找不到代碼 {stock_code} 的即時股價資料"
 
         name = stock.get("n", "未知股票")
-        z = stock.get("z", "-")  # 現價
-        y = stock.get("y", "-")  # 昨收
-        o = stock.get("o", "-")  # 開盤
-        h = stock.get("h", "-")  # 最高
-        l = stock.get("l", "-")  # 最低
-        c = stock.get("c", stock_code)  # 股票代碼
-        t = stock.get("t", "-")  # 時間
+        z = stock.get("z", "-")
+        y = stock.get("y", "-")
+        o = stock.get("o", "-")
+        h = stock.get("h", "-")
+        l = stock.get("l", "-")
+        c = stock.get("c", stock_code)
+        t = stock.get("t", "-")
+
+        if z in ["-", "", None]:
+            return (
+                f"[{name}({c})] 尚無即時成交價（可能已收盤）\n"
+                f"🕐 時間：{t}\n"
+                f"📊 開盤：{o} / 高：{h} / 低：{l} / 昨收：{y}"
+            )
 
         # 漲跌與漲幅計算
         try:
