@@ -84,9 +84,15 @@ def get_stock_info(stock_code):
             print(f"📡 嘗試查詢：{url}", flush=True)
             data = res.json()
             msg_array = data.get("msgArray", [])
-            print(f"📬 回傳結果：{json.dumps(msg_array, ensure_ascii=False)}", flush=True)
-            return msg_array[0] if msg_array else None
+            if not msg_array:
+                return None
+            stock = msg_array[0]
+            # 檢查是否為有效數值
+            if stock.get("z") in ["-", "", None]:
+                return None
+            return stock
 
+        # 優先查上市（但要確認資料有效）
         stock = fetch("tse")
         if not stock:
             stock = fetch("otc")
