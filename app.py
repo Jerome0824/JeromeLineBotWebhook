@@ -5,7 +5,7 @@ import requests
 
 app = Flask(__name__)
 
-LINE_ACCESS_TOKEN = "<<<請填入你的 Channel Access Token>>>"
+LINE_ACCESS_TOKEN = "HSe3XVIu1uX1L5KKbtGP8YBEHWgLKfGpdFQhYgQtVuLmLwBUTVDMi7/J4YPB8ZejXP0Wxa4m+c/VWX48tzoFcx5k+Wd/iS4uIz71lkPEtG94S7xO92ED6h7a+ZmSEXreduRqiEsmAgnyUu1ukjOqiAdB04t89/1O/w1cDnyilFU="
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
