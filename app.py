@@ -78,21 +78,23 @@ def webhook():
     return "OK"
 
 # ✅ 查詢台股 / 上櫃股票
-def get_stock_info(stock_code, is_otc=False):
+def get_stock_info(stock_code):
     try:
-        market = "otc" if is_otc else "tse"
-        url = f"https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch={market}_{stock_code}.tw"
-        headers = {
-            "User-Agent": "Mozilla/5.0"
-        }
-        res = requests.get(url, headers=headers)
-        data = res.json()
-        msg_array = data.get("msgArray", [])
+        def fetch(market):
+            url = f"https://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch={market}_{stock_code}.tw"
+            headers = {
+                "User-Agent": "Mozilla/5.0"
+            }
+            res = requests.get(url, headers=headers)
+            data = res.json()
+            msg_array = data.get("msgArray", [])
+            return msg_array[0] if msg_array else None
 
-        if not msg_array:
+        stock = fetch("tse") or fetch("otc")
+
+        if not stock:
             return f"❌ 找不到代碼 {stock_code} 的即時股價資料"
 
-        stock = msg_array[0]
         name = stock.get("n", "未知股票")
         z = stock.get("z", "-")  # 現價
         y = stock.get("y", "-")  # 昨收
