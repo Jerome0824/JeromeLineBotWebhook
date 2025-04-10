@@ -10,7 +10,9 @@ LINE_ACCESS_TOKEN = "HSe3XVIu1uX1L5KKbtGP8YBEHWgLKfGpdFQhYgQtVuLmLwBUTVDMi7/J4YP
 @app.route('/webhook', methods=['POST'])
 def webhook():
     data = request.get_json()
-    app.logger.info("📬 收到 LINE Webhook：\n" + json.dumps(data, indent=2, ensure_ascii=False))
+    
+    print("📬 收到 LINE Webhook：")
+    print(json.dumps(data, indent=2, ensure_ascii=False))
 
     for event in data.get("events", []):
         if event["type"] == "message" and event["message"]["type"] == "text":
