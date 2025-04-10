@@ -30,10 +30,9 @@ def webhook():
                 for m in mention.get("mentionees", []):
                     if m.get("userId") == BOT_USER_ID:
                         mentioned = True
-                        idx = m.get("index", 0)
-                        length = m.get("length", 0)
-                        # 去除 @bot 的字串
-                        text = text[:idx] + text[idx+length:]
+                        mention_text = text[m.get("index"): m.get("index") + m.get("length")]
+                        text = text.replace(mention_text, "").strip()
+
 
             # ✅ 在群組中但沒被 tag，略過
             if is_group and not mentioned:
