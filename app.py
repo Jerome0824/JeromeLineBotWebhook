@@ -44,3 +44,31 @@ def webhook():
 if __name__ == '__main__':
     port = int(os.environ.get("PORT", 10000))
     app.run(host="0.0.0.0", port=port)
+from flask import request
+
+@app.route('/send', methods=['GET'])
+def send_message():
+    user_id = request.args.get("userId")
+    message = request.args.get("msg")
+
+    if not user_id or not message:
+        return "❌ 請附上 ?userId=...&msg=..."
+
+    headers = {
+        "Authorization": f"Bearer {LINE_ACCESS_TOKEN}",
+        "Content-Type": "application/json"
+    }
+
+    body = {
+        "to": user_id,
+        "messages": [
+            {
+                "type": "text",
+                "text": message
+            }
+        ]
+    }
+
+    res = requests.post("https://api.line.me/v2/bot/message/push", headers=headers, json=body)
+    print(f"🔔 Push message 結果：{res.status_code} - {res.text}", flush=True)
+    return f"✅ 已推播：{message} 給 {user_id}"
