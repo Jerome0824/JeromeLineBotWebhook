@@ -14,65 +14,10 @@ def webhook():
     print("📬 收到 LINE Webhook：", flush=True)
     print(json.dumps(data, indent=2, ensure_ascii=False), flush=True)
 
-    for event in data.get("events", []):
-        if event["type"] == "message" and event["message"]["type"] == "text":
-            source = event.get("source", {})
-            message = event["message"]
-            text = message["text"]
-
-            source_type = source.get("type")
-            is_group = source_type == "group"
-            mentioned = False
-
-            # ✅ 檢查是否被 @ 並移除 mention 字串
-            mention = message.get("mention")
-            if mention:
-                for m in mention.get("mentionees", []):
-                    if m.get("userId") == BOT_USER_ID:
-                        mentioned = True
-                        mention_text = text[m.get("index"): m.get("index") + m.get("length")]
-                        text = text.replace(mention_text, "").strip()
-
-
-            # ✅ 在群組中但沒被 tag，略過
-            if is_group and not mentioned:
-                print("👻 群組中未被 tag，略過", flush=True)
-                continue
-
-            reply_token = event["replyToken"]
-
-            # ✅ 偵測股票指令
-            stock_code = None
-            is_otc = False
-            if text.startswith("台股") and len(text) >= 6:
-                stock_code = text[2:6]
-                reply_message = get_stock_info(stock_code)
-            else:
-                reply_message = f"你說的是：「{text}」"
-
-            print("📝 回應內容：", reply_message, flush=True)
-
-            headers = {
-                "Authorization": f"Bearer {LINE_ACCESS_TOKEN}",
-                "Content-Type": "application/json"
-            }
-
-            body = {
-                "replyToken": reply_token,
-                "messages": [
-                    {
-                        "type": "text",
-                        "text": reply_message
-                    }
-                ]
-            }
-
-            res = requests.post("https://api.line.me/v2/bot/message/reply", headers=headers, json=body)
-            print(f"🔁 LINE 回覆結果：{res.status_code} - {res.text}", flush=True)
-
+    # 🔕 已停用群組 @ 標記與文字指令處理邏輯
     return "OK"
 
-# ✅ 查詢台股 / 上櫃股票
+# ✅ 查詢台股 / 上正股票（保留，可視未來需求啟用）
 def get_stock_info(stock_code):
     try:
         def fetch(market):
@@ -81,7 +26,7 @@ def get_stock_info(stock_code):
                 "User-Agent": "Mozilla/5.0"
             }
             res = requests.get(url, headers=headers)
-            print(f"📡 嘗試查詢：{url}", flush=True)
+            print(f"📱 嘗試查詢：{url}", flush=True)
             data = res.json()
             msg_array = data.get("msgArray", [])
             if not msg_array:
@@ -112,7 +57,6 @@ def get_stock_info(stock_code):
                 f"📊 開盤：{o} / 高：{h} / 低：{l} / 昨收：{y}"
             )
 
-        # 漲跌與漲幅計算
         try:
             change = round(float(z) - float(y), 2)
             percent = round((change / float(y)) * 100, 2)
@@ -132,14 +76,19 @@ def get_stock_info(stock_code):
         print("❗ 查詢錯誤：", e, flush=True)
         return "❌ 查詢股價失敗，請稍後再試"
 
-# ✅ 主動推播
-@app.route('/send', methods=['GET'])
+# ✅ 主動推播（支援 GET & POST）
+@app.route('/send', methods=['GET', 'POST'])
 def send_message():
-    user_id = request.args.get("userId")
-    message = request.args.get("msg")
+    if request.method == 'GET':
+        user_id = request.args.get("userId")
+        message = request.args.get("msg")
+    else:
+        data = request.get_json()
+        user_id = data.get("userId")
+        message = data.get("msg")
 
     if not user_id or not message:
-        return "❌ 請附上 ?userId=...&msg=..."
+        return "❌ 請附上 userId 和 msg"
 
     headers = {
         "Authorization": f"Bearer {LINE_ACCESS_TOKEN}",
@@ -159,6 +108,21 @@ def send_message():
     res = requests.post("https://api.line.me/v2/bot/message/push", headers=headers, json=body)
     print(f"🔔 Push message 結果：{res.status_code} - {res.text}", flush=True)
     return f"✅ 已推播：{message} 給 {user_id}"
+
+# ✅ 防止 Render 休眠
+@app.route('/ping')
+def ping():
+    return "pong", 200
+
+# ✅ 查詢 LINE 剩餘推播配題
+@app.route('/quota')
+def quota():
+    headers = {
+        "Authorization": f"Bearer {LINE_ACCESS_TOKEN}"
+    }
+    res = requests.get("https://api.line.me/v2/bot/message/quota/consumption", headers=headers)
+    print(f"📊 查詢 quota 結果：{res.status_code} - {res.text}", flush=True)
+    return res.text, res.status_code
 
 # ✅ Render 埠口
 if __name__ == '__main__':
